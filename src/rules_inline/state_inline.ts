@@ -33,7 +33,7 @@ class StateInline {
   // optimization of pairs parse (emphasis, strikes).
   cache: Record<number, number> = {}
 
-  // backtick length => last seen position
+  // backtick run length => position of its last run, built lazily on first use
   backticks: Record<number, number> = {}
   backticksScanned = false
 

@@ -2,15 +2,29 @@
 
 import type StateInline from './state_inline.ts'
 
+// Position of the last backtick run of each length. Derived from the string in
+// one pass, so unlike an incremental cache it never depends on how the parser
+// walks it, and stays valid across lookaheads and narrowed ranges.
+function buildLastRuns (src: string): Record<number, number> {
+  const lastRuns: Record<number, number> = {}
+  let pos = 0
+
+  while ((pos = src.indexOf('`', pos)) !== -1) {
+    const start = pos
+    while (src.charCodeAt(++pos) === 0x60/* ` */) { /* scan run length */ }
+    lastRuns[pos - start] = start
+  }
+
+  return lastRuns
+}
+
 export default function backtick (state: StateInline, silent: boolean): boolean {
-  let pos = state.pos
-  const ch = state.src.charCodeAt(pos)
+  const start = state.pos
 
-  if (ch !== 0x60/* ` */) { return false }
+  if (state.src.charCodeAt(start) !== 0x60/* ` */) { return false }
 
-  const start = pos
-  pos++
   const max = state.posMax
+  let pos = start + 1
 
   // scan marker length
   while (pos < max && state.src.charCodeAt(pos) === 0x60/* ` */) { pos++ }
@@ -18,45 +32,39 @@ export default function backtick (state: StateInline, silent: boolean): boolean 
   const marker = state.src.slice(start, pos)
   const openerLength = marker.length
 
-  if (state.backticksScanned && (state.backticks[openerLength] || 0) <= start) {
-    if (!silent) state.pending += marker
-    state.pos += openerLength
-    return true
+  if (!state.backticksScanned) {
+    state.backticks = buildLastRuns(state.src)
+    state.backticksScanned = true
   }
 
-  let matchEnd = pos
-  let matchStart
+  // Nothing of the same length left in the string, so no closer can exist
+  if ((state.backticks[openerLength] ?? -1) >= pos) {
+    let matchEnd = pos
+    let matchStart
 
-  // Nothing found in the cache, scan until the end of the line (or until marker is found)
-  while ((matchStart = state.src.indexOf('`', matchEnd)) !== -1) {
-    matchEnd = matchStart + 1
+    while ((matchStart = state.src.indexOf('`', matchEnd)) !== -1 && matchStart < max) {
+      // Measure the whole run, not just its part inside the current range,
+      // otherwise a run straddling `max` would be mistaken for a shorter one
+      matchEnd = matchStart + 1
+      while (state.src.charCodeAt(matchEnd) === 0x60/* ` */) { matchEnd++ }
 
-    // scan marker length
-    while (matchEnd < max && state.src.charCodeAt(matchEnd) === 0x60/* ` */) { matchEnd++ }
+      if (matchEnd > max) break
 
-    const closerLength = matchEnd - matchStart
-
-    if (closerLength === openerLength) {
-      // Found matching closer length.
-      if (!silent) {
-        const token = state.push('code_inline', 'code', 0)
-        token.markup = marker
-        token.content = state.src.slice(pos, matchStart)
-          .replace(/\n/g, ' ')
-          .replace(/^ (.+) $/, '$1')
+      if (matchEnd - matchStart === openerLength) {
+        if (!silent) {
+          const token = state.push('code_inline', 'code', 0)
+          token.markup = marker
+          token.content = state.src.slice(pos, matchStart)
+            .replace(/\n/g, ' ')
+            .replace(/^ (.+) $/, '$1')
+        }
+        state.pos = matchEnd
+        return true
       }
-      state.pos = matchEnd
-      return true
     }
-
-    // Some different length found, put it in cache as upper limit of where closer can be found
-    state.backticks[closerLength] = matchStart
   }
-
-  // Scanned through the end, didn't find anything
-  state.backticksScanned = true
 
   if (!silent) state.pending += marker
-  state.pos += openerLength
+  state.pos = pos
   return true
 }
