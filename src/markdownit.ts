@@ -62,17 +62,6 @@ const GOOD_DATA_RE = /^data:image\/(gif|png|jpeg|webp);/
 
 const RECODE_HOSTNAME_FOR = ['http:', 'https:', 'mailto:']
 
-function encodeLink (parsed: mdurl.Url): string {
-  return mdurl.format({
-    ...parsed,
-    auth: parsed.auth && mdurl.encode(parsed.auth),
-    hostname: parsed.hostname && mdurl.encode(parsed.hostname),
-    pathname: parsed.pathname && mdurl.encode(parsed.pathname),
-    search: parsed.search && mdurl.encode(parsed.search),
-    hash: parsed.hash && mdurl.encode(parsed.hash)
-  })
-}
-
 /**
  * Parses Markdown into tokens and renders them to HTML.
  *
@@ -157,6 +146,7 @@ class MarkdownIt {
    * which includes url-encoding, punycode, etc.
    */
   normalizeLink (url: string): string {
+    // Each url part should be encoded separately, with proper encoder
     const parsed = mdurl.parse(url, true)
 
     if (parsed.hostname) {
@@ -173,7 +163,13 @@ class MarkdownIt {
       }
     }
 
-    return encodeLink(parsed)
+    if (parsed.auth) parsed.auth = mdurl.encode(parsed.auth)
+    if (parsed.hostname) parsed.hostname = mdurl.encode(parsed.hostname)
+    if (parsed.pathname) parsed.pathname = mdurl.encode(parsed.pathname)
+    if (parsed.search) parsed.search = mdurl.encode(parsed.search)
+    if (parsed.hash) parsed.hash = mdurl.encode(parsed.hash)
+
+    return mdurl.format(parsed)
   }
 
   /**
