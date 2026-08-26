@@ -916,3 +916,10 @@ the label cancels the link (CommonMark 0.31.2 6.1).
 .
 <p>[foo <code>bar](/url)</code> baz</p>
 .
+
+No stripping when a code span is all spaces (CommonMark 0.31.2 6.1).
+.
+`   `
+.
+<p><code>   </code></p>
+.

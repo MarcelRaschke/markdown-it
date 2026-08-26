@@ -54,9 +54,14 @@ export default function backtick (state: StateInline, silent: boolean): boolean 
         if (!silent) {
           const token = state.push('code_inline', 'code', 0)
           token.markup = marker
-          token.content = state.src.slice(pos, matchStart)
-            .replace(/\n/g, ' ')
-            .replace(/^ (.+) $/, '$1')
+          let content = state.src.slice(pos, matchStart).replace(/\n/g, ' ')
+
+          // Strip one space from each side, unless the content is all spaces
+          if (content.startsWith(' ') && content.endsWith(' ') && /[^ ]/.test(content)) {
+            content = content.slice(1, -1)
+          }
+
+          token.content = content
         }
         state.pos = matchEnd
         return true
