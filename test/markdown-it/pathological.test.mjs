@@ -157,6 +157,10 @@ describe('Pathological sequences speed', () => {
       )
     })
 
+    it('linkify unregistered schemes', async () => {
+      await test_pattern('a://'.repeat(70000), { linkify: true })
+    })
+
     it('a lot of smartquotes', async () => {
       await test_pattern('"'.repeat(160000), { typographer: true })
     })
