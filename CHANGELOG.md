@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [15.0.1] - Unreleased
+
+### Changed
+- doc: replace oxide theme with custom one.
+
+### Fixed
+- Fixed code span parsing after lookaheads for unclosed link and image labels, #1201.
+- Preserve spaces in code spans whose content consists only of spaces, #1180.
+- Preserve brackets around IPv6 address literals when normalizing links, #1204.
+
+### Security
+- Fixed quadratic complexity when replacing fuzzy links.
+- Fixed quadratic complexity in scheme backscan (inline linkify rule).
+
+
 ## [15.0.0] - 2026-07-30
 
 ### Added
@@ -16,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `reference_definition` tokens. They remain stripped by default
   for backwards compatibility, #1055. Also adjusted the line-break heuristic
   to keep output exactly the same.
-
 
 ### Changed
 - [breaking] `linkify-it` => v6
@@ -728,6 +742,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed presets folder (configs -> presets).
 
 
+[15.0.1]: https://github.com/markdown-it/markdown-it/compare/15.0.0...15.0.1
 [15.0.0]: https://github.com/markdown-it/markdown-it/compare/14.3.0...15.0.0
 [14.3.0]: https://github.com/markdown-it/markdown-it/compare/14.2.0...14.3.0
 [14.2.0]: https://github.com/markdown-it/markdown-it/compare/14.1.1...14.2.0
