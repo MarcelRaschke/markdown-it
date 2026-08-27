@@ -3,7 +3,6 @@
 // Currently restricted by `md.validateLink()` to http/https/ftp
 //
 
-import { arrayReplaceAt } from '../common/utils.ts'
 import type StateCore from './state_core.ts'
 
 function isLinkOpen (str: string) {
@@ -24,7 +23,8 @@ export default function linkify (state: StateCore): void {
       continue
     }
 
-    let tokens = blockTokens[j].children!
+    const tokens = blockTokens[j].children!
+    const replacements: Array<{ index: number, nodes: typeof tokens }> = []
 
     let htmlLinkLevel = 0
 
@@ -127,9 +127,36 @@ export default function linkify (state: StateCore): void {
           nodes.push(token)
         }
 
-        // replace current node
-        blockTokens[j].children = tokens = arrayReplaceAt(tokens, i, nodes)
+        replacements.push({ index: i, nodes })
       }
+    }
+
+    if (replacements.length > 0) {
+      let newTokensLength = tokens.length
+      for (const replacement of replacements) {
+        newTokensLength += replacement.nodes.length - 1
+      }
+
+      const newTokens = new Array<(typeof tokens)[number]>(newTokensLength)
+      let replacementIndex = 0
+      let newTokenIndex = 0
+
+      replacements.reverse()
+
+      for (let i = 0; i < tokens.length; i++) {
+        const replacement = replacements[replacementIndex]
+
+        if (replacement?.index === i) {
+          for (const node of replacement.nodes) {
+            newTokens[newTokenIndex++] = node
+          }
+          replacementIndex++
+        } else {
+          newTokens[newTokenIndex++] = tokens[i]
+        }
+      }
+
+      blockTokens[j].children = newTokens
     }
   }
 }
